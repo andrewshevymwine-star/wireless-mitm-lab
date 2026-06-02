@@ -52,18 +52,18 @@ By completing this lab you will be able to:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     HOST MACHINE                            │
-│                  (Your Physical PC)                         │
+│                    (My Physical PC)                         │
 │                                                             │
-│   ┌─────────────────┐        ┌────────────────────────┐    │
-│   │   KALI LINUX    │        │    METASPLOITABLE 2    │    │
-│   │  (Attacker VM)  │◄──────►│      (Victim VM)       │    │
-│   │                 │        │                        │    │
-│   │ • hostapd       │        │ • Running web services │    │
-│   │ • dnsmasq       │        │ • HTTP traffic         │    │
-│   │ • arpspoof      │        │ • Simulated user       │    │
-│   │ • ettercap      │        │                        │    │
-│   │ • Wireshark     │        │                        │    │
-│   └────────┬────────┘        └────────────────────────┘    │
+│   ┌─────────────────┐        ┌────────────────────────┐     │
+│   │   KALI LINUX    │        │    METASPLOITABLE 2    │     │
+│   │  (Attacker VM)  │◄──────►│      (Victim VM)       │     │
+│   │                 │        │                        │     │
+│   │ • hostapd       │        │ • Running web services │     │
+│   │ • dnsmasq       │        │ • HTTP traffic         │     │
+│   │ • arpspoof      │        │ • Simulated user       │     │
+│   │ • ettercap      │        │                        │     │
+│   │ • Wireshark     │        │                        │     │
+│   └────────┬────────┘        └────────────────────────┘     │
 │            │                                                │
 │            │  Host-Only Network: 192.168.56.0/24            │
 │            │  vboxnet0                                      │
@@ -120,7 +120,7 @@ ping -c 3 192.168.56.102
 ```
 
 > 📸 **Screenshot 1:** `screenshots/01-ping-connectivity.png`
-> *Take a screenshot showing successful ping replies from Metasploitable*
+> *A screenshot showing successful ping replies from Metasploitable*
 
 ![Ping Connectivity](screenshots/01-ping-connectivity.png)
 
@@ -134,7 +134,7 @@ nmap -sV 192.168.56.102
 ```
 
 > 📸 **Screenshot 2:** `screenshots/02-nmap-scan.png`
-> *Take a screenshot of the full nmap output showing open ports and services*
+> *A screenshot of the full nmap output showing open ports and services*
 
 ![Nmap Scan Results](screenshots/02-nmap-scan.png)
 
@@ -152,7 +152,7 @@ sudo sysctl -p
 ```
 
 > 📸 **Screenshot 3:** `screenshots/03-ip-forwarding.png`
-> *Take a screenshot showing `cat /proc/sys/net/ipv4/ip_forward` outputting `1`*
+> *A screenshot showing `cat /proc/sys/net/ipv4/ip_forward` outputting `1`*
 
 ![IP Forwarding Enabled](screenshots/03-ip-forwarding.png)
 
@@ -165,7 +165,7 @@ ip addr show
 ```
 
 > 📸 **Screenshot 4:** `screenshots/04-network-interfaces.png`
-> *Take a screenshot of `ip addr show` output highlighting your eth1/host-only interface*
+> *A screenshot of `ip addr show` output highlighting your eth1/host-only interface*
 
 ![Network Interfaces](screenshots/04-network-interfaces.png)
 
@@ -233,14 +233,14 @@ sudo dnsmasq -C /etc/dnsmasq_evil.conf --no-daemon
 ```
 
 > 📸 **Screenshot 5:** `screenshots/05-hostapd-running.png`
-> *Take a screenshot of the terminal showing `eth1: AP-ENABLED` from hostapd*
+> *A screenshot of the terminal showing `eth1: AP-ENABLED` from hostapd*
 
 ![hostapd Evil Twin Running](screenshots/05-hostapd-running.png)
 
 ---
 
 > 📸 **Screenshot 6:** `screenshots/06-dnsmasq-running.png`
-> *Take a screenshot of dnsmasq running and showing DHCP/DNS ready*
+> *A screenshot of dnsmasq running and showing DHCP/DNS ready*
 
 ![dnsmasq DHCP Running](screenshots/06-dnsmasq-running.png)
 
@@ -253,7 +253,7 @@ sudo iwlist eth1 scan | grep -i "corpwifi"
 ```
 
 > 📸 **Screenshot 7:** `screenshots/07-rogue-ap-broadcast.png`
-> *Take a screenshot showing the CorpWifi SSID appearing in the scan results*
+> *A screenshot showing the CorpWifi SSID appearing in the scan results*
 
 ![Rogue AP Broadcasting](screenshots/07-rogue-ap-broadcast.png)
 
@@ -284,7 +284,7 @@ sudo nmap -sn 192.168.56.0/24
 ```
 
 > 📸 **Screenshot 8:** `screenshots/08-host-discovery.png`
-> *Take a screenshot of nmap host discovery showing both Kali and Metasploitable IPs*
+> *A screenshot of nmap host discovery showing both Kali and Metasploitable IPs*
 
 ![Host Discovery](screenshots/08-host-discovery.png)
 
@@ -301,7 +301,7 @@ arp -n
 ```
 
 > 📸 **Screenshot 9:** `screenshots/09-arp-before-poison.png`
-> *Take a screenshot of the clean ARP table showing the real gateway MAC address*
+> *A screenshot of the clean ARP table showing the real gateway MAC address*
 
 ![ARP Cache Before Poisoning](screenshots/09-arp-before-poison.png)
 
@@ -320,7 +320,7 @@ sudo arpspoof -i eth1 -t 192.168.56.1 192.168.56.102
 ```
 
 > 📸 **Screenshot 10:** `screenshots/10-arpspoof-running.png`
-> *Take a screenshot of BOTH arpspoof terminals running side by side*
+> *A screenshot of BOTH arpspoof terminals running side by side*
 
 ![ARP Spoofing Running](screenshots/10-arpspoof-running.png)
 
@@ -335,7 +335,7 @@ arp -n
 ```
 
 > 📸 **Screenshot 11:** `screenshots/11-arp-after-poison.png`
-> *Take a screenshot of the poisoned ARP table — the gateway IP now maps to Kali's MAC*
+> *A screenshot of the poisoned ARP table — the gateway IP now maps to Kali's MAC*
 
 ![ARP Cache After Poisoning - Confirmed Poisoned](screenshots/11-arp-after-poison.png)
 
@@ -348,7 +348,7 @@ sudo ettercap -T -i eth1 -M arp:remote /192.168.56.102// /192.168.56.1//
 ```
 
 > 📸 **Screenshot 12:** `screenshots/12-ettercap-mitm.png`
-> *Take a screenshot of Ettercap running and confirming MITM is active*
+> *A screenshot of Ettercap running and confirming MITM is active*
 
 ![Ettercap MITM Active](screenshots/12-ettercap-mitm.png)
 
@@ -365,7 +365,7 @@ sudo wireshark &
 Select interface **eth1**, start capture, apply filter: `http`
 
 > 📸 **Screenshot 13:** `screenshots/13-wireshark-capturing.png`
-> *Take a screenshot of Wireshark capturing on eth1 with the http filter applied*
+> *A screenshot of Wireshark capturing on eth1 with the http filter applied*
 
 ![Wireshark Capturing HTTP Traffic](screenshots/13-wireshark-capturing.png)
 
@@ -389,7 +389,7 @@ http.request.method == "POST"
 Right-click POST packet → **Follow → HTTP Stream**
 
 > 📸 **Screenshot 14:** `screenshots/14-credentials-captured.png`
-> *Take a screenshot of the HTTP stream showing plaintext username and password*
+> *A screenshot of the HTTP stream showing plaintext username and password*
 
 ![Plaintext Credentials Intercepted](screenshots/14-credentials-captured.png)
 
@@ -402,7 +402,7 @@ sudo urlsnarf -i eth1
 ```
 
 > 📸 **Screenshot 15:** `screenshots/15-urlsnarf-output.png`
-> *Take a screenshot of urlsnarf logging the victim's HTTP requests in real time*
+> *A screenshot of urlsnarf logging the victim's HTTP requests in real time*
 
 ![URL Sniffing with urlsnarf](screenshots/15-urlsnarf-output.png)
 
@@ -415,7 +415,7 @@ sudo driftnet -i eth1
 ```
 
 > 📸 **Screenshot 16:** `screenshots/16-driftnet-images.png`
-> *Take a screenshot of the driftnet window showing images captured from victim traffic*
+> *A screenshot of the driftnet window showing images captured from victim traffic*
 
 ![Images Captured via Driftnet](screenshots/16-driftnet-images.png)
 
@@ -434,7 +434,7 @@ sudo arpwatch -i eth1
 ```
 
 > 📸 **Screenshot 17:** `screenshots/17-arp-detection.png`
-> *Take a screenshot showing the duplicate MAC detected in the ARP table*
+> *A screenshot showing the duplicate MAC detected in the ARP table*
 
 ![ARP Spoofing Detected](screenshots/17-arp-detection.png)
 
@@ -447,7 +447,7 @@ sudo kismet -c eth1
 ```
 
 > 📸 **Screenshot 18:** `screenshots/18-kismet-detection.png`
-> *Take a screenshot of Kismet flagging the rogue AP / duplicate SSID*
+> *A screenshot of Kismet flagging the rogue AP / duplicate SSID*
 
 ![Evil Twin Detected by Kismet](screenshots/18-kismet-detection.png)
 
@@ -483,7 +483,7 @@ sudo rm /etc/dnsmasq_evil.conf
 ```
 
 > 📸 **Screenshot 19:** `screenshots/19-cleanup-complete.png`
-> *Take a screenshot confirming IP forwarding is disabled and services are stopped*
+> *A screenshot confirming IP forwarding is disabled and services are stopped*
 
 ![Cleanup Complete](screenshots/19-cleanup-complete.png)
 
@@ -532,7 +532,7 @@ sudo rm /etc/dnsmasq_evil.conf
 
 ## Author
 
-**Andrew Mwine** | Cybersecurity Lab Portfolio  
+**Shevy** | Cybersecurity Lab Portfolio  
 *Tools used: Kali Linux · Metasploitable 2 · VirtualBox · hostapd · ettercap · Wireshark*
 
 > 🔒 *All techniques demonstrated in an isolated lab environment for educational purposes only.*
